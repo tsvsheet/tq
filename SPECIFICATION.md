@@ -13,7 +13,7 @@ This document is normative. The executable form of §3–§5 is [TqLexer.g4](TqL
 
 ## 2. The table model
 
-- The input is a TSV grid read with tsvsheet's grid semantics: rows are newline-separated lines, cells are TAB-separated, a leading `#!` first line and any `# ` (hash-space) line are comments that do not occupy a row, and a trailing newline adds no row.
+- The input is a TSV grid read with tsvsheet's grid semantics: rows are newline-separated lines, cells are TAB-separated, a leading `#!` first line and any hash-space (`#` followed by a space) line are comments that do not occupy a row, and a trailing newline adds no row.
 - **The first data row is the header by default.** Header cells name the columns. The header travels through the pipeline — projected by `select`/`drop`, relabeled by `rename`, extended by `derive`, replaced by `group` — and is emitted first in the output.
 - **Headerless mode** is an implementation option (`--no-header` in CLIs). All rows are data; column references are positional only (§4); `rename` is a program error (`ErrHeaderless`); `derive` and `group` assignment names are permitted as syntax but no header is emitted, and new columns are referenced by position.
 - Rows may be ragged; a reference to a column a given row lacks reads an empty cell.
@@ -23,7 +23,7 @@ This document is normative. The executable form of §3–§5 is [TqLexer.g4](TqL
 
 A program is one or more stages separated by `|`. Whitespace and newlines between tokens are insignificant; there are no comments in the query language (v1).
 
-```
+```text
 select name, stars | where [stars] > 1000 | sort -stars | limit 10
 ```
 

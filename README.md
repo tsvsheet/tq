@@ -2,7 +2,7 @@
 
 > **The query language of the tsvsheet ecosystem.** A `|`-separated pipeline of relational verbs — `select`, `where`, `derive`, `sort`, `group`, … — over a TSV or [tsvt](https://github.com/tsvsheet/tsvsheet) table, with every embedded expression written in the tsvsheet formula language so the two languages can never drift apart. TSV in, TSV out; between `cut` and `jq`.
 
-```
+```text
 where and([stars] > 1000, [lang] = "go") | derive ratio = round([stars] / [forks], 2) | select name, stars, ratio | sort -stars | limit 10
 ```
 
