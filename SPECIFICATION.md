@@ -64,7 +64,7 @@ The expression sublanguage is tsvsheet's ([SPECIFICATION](https://github.com/tsv
 
 - **Compute-first.** When the input grid contains formula cells (a `.tsvt`), the implementation computes the sheet with the tsvsheet engine and the query runs over the computed value grid. The computed grid is rectangular — the engine pads every row to the grid's width — after which §2's header bound applies. A raw mode (`--raw`) skips this pass and treats every cell as verbatim text.
 - A computed **error value** (`#DIV/0!`, `#REF!`, …) is data: it flows through projections, sorts among the non-numeric texts, and groups by its text.
-- A `where` predicate keeps a row only when its value is exactly TRUE. Any other value — FALSE, a number, text, an error value — drops the row. Cell text never reads back as a boolean (§5), so a stored `TRUE` — a comparison's result written by `derive`, say — is the *text* `TRUE`, and a bare `where [flag]` over it keeps nothing: the working predicate is `where [flag] = "TRUE"`.
+- A `where` predicate keeps a row only when its value is exactly TRUE. Any other value — FALSE, a number, text, an error value — drops the row. Cell text never reads back as a boolean (§5), so a stored `TRUE` — a comparison's result written by `derive`, say — is the _text_ `TRUE`, and a bare `where [flag]` over it keeps nothing: the working predicate is `where [flag] = "TRUE"`.
 - A `derive` or aggregate expression that evaluates to an error value writes that error value as the cell text. A 2-D (spilling) result reduces to its scalar-context value.
 - **Strict mode** (`--strict`): the first expression evaluation producing an error value aborts the run with `ErrStrict`, naming the value, the column, and the row's 1-based position in the failing stage's input.
 
