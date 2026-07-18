@@ -1,0 +1,1 @@
+where and([stars] > 1000, left([lang], 2) = "go")

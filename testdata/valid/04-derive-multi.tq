@@ -1,0 +1,1 @@
+derive ratio = round([stars] / [forks], 2), flag = if([ratio] > 1, "hot", "cold")

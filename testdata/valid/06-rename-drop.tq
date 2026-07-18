@@ -1,0 +1,1 @@
+rename [full title] as title, lang as language | drop [3], notes

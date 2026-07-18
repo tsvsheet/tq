@@ -1,0 +1,1 @@
+group lang { total = sum([stars]), n = counta([name]), mean = round(avg([stars]), 2) }

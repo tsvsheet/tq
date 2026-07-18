@@ -1,0 +1,4 @@
+where [price] >= 4.50
+| derive total = [price] * [qty],
+         pct   = [total] * 10%
+| sort -total
