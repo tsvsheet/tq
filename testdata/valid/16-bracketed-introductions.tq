@@ -1,0 +1,1 @@
+derive [new col] = [stars] + 1 | rename stars as [star count]

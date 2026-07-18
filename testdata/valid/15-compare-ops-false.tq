@@ -1,0 +1,1 @@
+where or([stars] < 100, [forks] <= 3, [flag] = FALSE)

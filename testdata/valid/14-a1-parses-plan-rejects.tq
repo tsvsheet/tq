@@ -1,1 +1,1 @@
-where B2 > 0 | derive c = "other.tsvt"!A1
+where B2 > 0 | derive c = "other.tsvt"!A1, r = sum(A1:C3) + $B$2

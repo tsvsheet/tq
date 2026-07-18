@@ -2,7 +2,7 @@
 
 tq ("TSV query") is the query language of the tsvsheet ecosystem: a pipeline of relational verbs over a TSV or tsvt table, with every embedded expression written in the tsvsheet formula language. TSV in, TSV out. It sits between `cut` (columns, no predicates) and `jq` (predicates, no tables).
 
-This document is normative. The executable form of §3–§5 is [TqLexer.g4](TqLexer.g4) + [TqParser.g4](TqParser.g4); the grammar defines syntax only, and everything in §2 and §6–§8 is semantics an implementation layers over the parse tree. The canonical implementation is [tsvsheet/go-tq](https://github.com/tsvsheet/go-tq); design rationale lives in the tsvsheet org's SDD tree (`_projects/specs/tq/`).
+This document is normative. The executable form of §3–§5 is [TqLexer.g4](TqLexer.g4) + [TqParser.g4](TqParser.g4); the grammar defines syntax only, and everything in §2 and §6–§8 is semantics an implementation layers over the parse tree. The canonical implementation is [tsvsheet/go-tq](https://github.com/tsvsheet/go-tq).
 
 ## 1. Design rules
 
@@ -16,7 +16,7 @@ This document is normative. The executable form of §3–§5 is [TqLexer.g4](TqL
 - The input is a TSV grid read with tsvsheet's grid semantics: rows are newline-separated lines, cells are TAB-separated, a leading `#!` first line and any hash-space (`#` followed by a space) line are comments that do not occupy a row, and a trailing newline adds no row.
 - **The first data row is the header by default.** Header cells name the columns. The header travels through the pipeline — projected by `select`/`drop`, relabeled by `rename`, extended by `derive`, replaced by `group` — and is emitted first in the output.
 - **Headerless mode** is an implementation option (`--no-header` in CLIs). All rows are data; column references are positional only (§4); `rename` is a program error (`ErrHeaderless`); `derive` and `group` assignment names are permitted as syntax but no header is emitted, and new columns are referenced by position.
-- Rows may be ragged; a reference to a column a given row lacks reads an empty cell.
+- Rows may be ragged; a reference to a column a given row lacks reads an empty cell. In header mode the header also bounds the width: a cell beyond the last header column is outside the table model — no reference can reach it — and is discarded before the first stage. Headerless mode has no such bound; there the table's width is its arity, the widest row's cell count.
 - Output is written with tsvsheet's grid writer: TAB-separated cells, one newline-terminated line per row, comments not preserved.
 
 ## 3. Programs and stages
@@ -48,13 +48,13 @@ The stages, in their entirety (v1):
 
 - In expressions, a column reference is bracketed: `[name]` or `[N]`.
 - Digits-only content (`[2]`) is a **1-based column index**, and is the only form allowed in headerless mode.
-- Any other content is a **header name**: exact, case-sensitive match, first match winning when headers repeat. `]` cannot appear in the content — there is no escape (v1); a header containing `]` is reachable by position or after `rename`. A digits-only header is likewise reachable by position or after `rename`.
-- In stage column positions (`select`, `drop`, `rename`, `sort` keys, `distinct`, `group` keys) brackets may be dropped for a bare identifier (`select name, stars`) and a bare integer is an index; brackets are required for names with spaces or punctuation.
+- Any other content is a **header name** — empty content included: `[]` names an empty header cell — matched exactly and case-sensitively, first match winning when headers repeat. `]` cannot appear in the content — there is no escape (v1); a header containing `]` is reachable by position or after `rename`. A digits-only header is likewise reachable by position or after `rename`.
+- In stage column positions (`select`, `drop`, `rename`, `sort` keys, `distinct`, `group` keys) brackets may be dropped for a bare identifier or a bare integer index. A bare identifier is ASCII letters only (the grammar's NAME token), so brackets are required for anything else in a name — digits (`[foo2]`), spaces, punctuation, or non-ASCII letters. The grammar admits any tsvsheet NUMBER in column position; an implementation rejects a fractional one as a syntax error at program build, exactly as §3 rejects fractional counts.
 - **Resolution is plan-time.** Every reference in the program resolves against the header (or arity) before any row is processed; an unknown name or out-of-range index is `ErrUnknownColumn` (§8), never a per-row error value. Columns introduced by `derive`/`group` are referenceable in later stages.
 
 ## 5. Expressions
 
-The expression sublanguage is tsvsheet's ([SPECIFICATION](https://github.com/tsvsheet/tsvsheet/blob/main/SPECIFICATION.md) §5) with two differences, both syntactic: the pipe alternative is absent (§1 rule 2), and the column reference (§4) is an additional operand. Operator precedence, associativity, literals, function names (case-insensitive), and every function's behavior are tsvsheet's, evaluated by the tsvsheet engine. Cell text coerces (number/boolean/date/string) exactly as a sheet literal does.
+The expression sublanguage is tsvsheet's ([SPECIFICATION](https://github.com/tsvsheet/tsvsheet/blob/main/SPECIFICATION.md) §5) with two differences, both syntactic: the pipe alternative is absent (§1 rule 2), and the column reference (§4) is an additional operand. Operator precedence, associativity, literals, function names (case-insensitive), and every function's behavior are tsvsheet's, evaluated by the tsvsheet engine. Cell text coerces exactly as a sheet reads a literal cell: as a number where the operation is numeric and as text where it is textual — never as a boolean or a date, so a cell holding `TRUE` is the text `TRUE` (§6 gives the predicate idiom).
 
 **Sort order (total).** Per key: cells that coerce to numbers order before cells that do not; numeric cells order numerically among themselves; non-numeric cells order by byte-wise comparison of raw text among themselves; `-` reverses the entire key order; the sort is stable, so equal keys keep their prior relative order.
 
@@ -62,9 +62,9 @@ The expression sublanguage is tsvsheet's ([SPECIFICATION](https://github.com/tsv
 
 ## 6. Computed values, error values, strictness
 
-- **Compute-first.** When the input grid contains formula cells (a `.tsvt`), the implementation computes the sheet with the tsvsheet engine and the query runs over the computed value grid. A raw mode (`--raw`) skips this pass and treats every cell as verbatim text.
+- **Compute-first.** When the input grid contains formula cells (a `.tsvt`), the implementation computes the sheet with the tsvsheet engine and the query runs over the computed value grid. The computed grid is rectangular — the engine pads every row to the grid's width — after which §2's header bound applies. A raw mode (`--raw`) skips this pass and treats every cell as verbatim text.
 - A computed **error value** (`#DIV/0!`, `#REF!`, …) is data: it flows through projections, sorts among the non-numeric texts, and groups by its text.
-- A `where` predicate keeps a row only when its value is exactly TRUE. Any other value — FALSE, a number, text, an error value — drops the row.
+- A `where` predicate keeps a row only when its value is exactly TRUE. Any other value — FALSE, a number, text, an error value — drops the row. Cell text never reads back as a boolean (§5), so a stored `TRUE` — a comparison's result written by `derive`, say — is the *text* `TRUE`, and a bare `where [flag]` over it keeps nothing: the working predicate is `where [flag] = "TRUE"`.
 - A `derive` or aggregate expression that evaluates to an error value writes that error value as the cell text. A 2-D (spilling) result reduces to its scalar-context value.
 - **Strict mode** (`--strict`): the first expression evaluation producing an error value aborts the run with `ErrStrict`, naming the value, the column, and the row's 1-based position in the failing stage's input.
 
