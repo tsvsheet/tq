@@ -64,9 +64,9 @@ js: image ## Generate the JavaScript parser into gen/js
 
 .PHONY: java
 java: image ## Generate the Java parser into gen/java
-	$(RUN) -Dlanguage=Java -package org.uplang.tqgrammar -lib imports -o gen/java $(LEXER)
+	$(RUN) -Dlanguage=Java -package com.tsvsheet.tqgrammar -lib imports -o gen/java $(LEXER)
 	cp $(MAKEFILE_DIR)/imports/*.g4 $(MAKEFILE_DIR)/gen/java/
-	$(RUN) -Dlanguage=Java -visitor -package org.uplang.tqgrammar -lib gen/java -o gen/java $(PARSER)
+	$(RUN) -Dlanguage=Java -visitor -package com.tsvsheet.tqgrammar -lib gen/java -o gen/java $(PARSER)
 
 .PHONY: cpp
 cpp: image ## Generate the C++ parser into gen/cpp (ANTLR has no plain-C target)
