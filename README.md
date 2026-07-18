@@ -10,4 +10,3 @@ Grammar-first, exactly like [tsvsheet](https://github.com/tsvsheet/tsvsheet) and
 
 - Canonical engine: [tsvsheet/go-tq](https://github.com/tsvsheet/go-tq) — the single implementation of tq semantics.
 - CLI: [tsvsheet/tq.go](https://github.com/tsvsheet/tq.go) — the `tq` binary.
-- gloo-foo pipelines: [gloo-foo/cmd-tq](https://github.com/gloo-foo/cmd-tq) — `Tq(query, opts...)` as a composable command value.
